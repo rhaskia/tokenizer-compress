@@ -1,59 +1,33 @@
-use calamine::{Reader, Xlsx, open_workbook};
-use calamine::RangeDeserializerBuilder;
-use serde::Deserialize;
+mod excel_loader;
+use excel_loader::Word;
 
-#[derive(Deserialize, Debug)]
-enum PartOfSpeech {
-    #[serde(rename = "n")] 
-    Noun,
-    #[serde(rename = "v")] 
-    Verb,
-    #[serde(untagged)]
-    Other(String)
+pub enum CompressedWord {
+    Word(u16),
+    Unknown(String),
+    Newline,
+    Punctuation(String),
 }
 
-struct Lemma {
-    rank: u16,
-    lemma: String,
-    part: PartOfSpeech,
-    freq: u32,
-    per_mil: f32,
+pub fn split_words(s: String) -> Vec<String> {
+    let simple_split = s.split(|c: char| c.is_whitespace());
+    simple_split.map(|spl| spl.to_string()).collect()
 }
 
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct WordForm {
-   lem_rank: u16,
-   lemma: String,
-   #[serde(rename = "PoS")] 
-   pos: PartOfSpeech,
-   lem_freq: u32,
-   word_freq: u32,
-   word: String,
+pub fn clean_words(s: String, word_list: Vec<Word>) -> Vec<CompressedWord> {
+    let lines = s.lines().map(|l| l.to_string()).collect::<Vec<String>>();
+    let split = lines.iter().map(|line| split_words(line.to_string())).collect::<Vec<Vec<String>>>();
+    println!("{split:?}");
+    panic!();
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut excel: Xlsx<_> = open_workbook("./wordFrequency.xlsx").unwrap();
-    println!("{:?}", excel.sheet_names());
-    let word_forms_sheet = excel.worksheet_range("3 wordForms").expect("Could not find wordforms range");
+fn main() -> anyhow::Result<()> {
+    let mut loader = excel_loader::ExcelLoader::new();
+    let word_forms = loader.load_word_forms();
+    let words = loader.load_words();
 
-    let iter_records =
-            RangeDeserializerBuilder::with_headers(&["lemRank", "lemma", "PoS", "lemFreq", "wordFreq", "word"]).from_range(&word_forms_sheet)?;
-
-    for result in iter_records {
-        let record: WordForm = result?;
-        println!("{record:?}");
-    }
-
-    // 1 lemmas
-    // 2 subgenres
-    // 3 wordForms
-    // 4 forms (219k)
-    if let Ok(r) = excel.worksheet_range("3 wordForms") {
-        for row in r.rows() {
-            println!("row={:?}", row);
-        }
-    }
+    let data_set = std::fs::read_to_string("pg11.txt")?;
+    let split = clean_words(data_set, words?);
 
     Ok(())
 }
+
