@@ -8,4 +8,5 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.82"
 calamine = "0.24.0"
+regex = "1.10.4"
 serde = { version = "1.0.197", features = ["derive"] }
