@@ -1,5 +1,7 @@
+import time
 import queue
 MAX_SIZE = 100
+
 
 class HuffmanTreeNode:
     def __init__(self, character, frequency):
@@ -114,11 +116,26 @@ def process_lines_to_dict(filename, max_lines=2**17):
                 pass
     return (words, ns)
 
-import time
+
+def load_file_freq(filename):
+    char_map = {}
+    try:
+        with open(filename, 'r') as f:
+            for line in f:
+                for char in line:
+                    char_map[char] = char_map.get(char, 0) + 1
+    except FileNotFoundError:
+        print(f"Error: File '{filename}' not found.")
+        return None
+    return char_map
+
 
 # Driver Code
 if __name__ == '__main__':
-    data, freq = process_lines_to_dict("../unigram_freq.csv")
+    #data, freq = process_lines_to_dict("../unigram_freq.csv")
+    d = load_file_freq("../cantrbry/alice29.txt")
+    data = [ord(c) for c in list(d.keys())]
+    freq = list(d.values())
     size = len(data)
 
     HuffmanCodes(data, freq, size)

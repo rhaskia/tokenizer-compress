@@ -133,27 +133,35 @@ fn count_cwords(cwords: &Vec<CWord>) -> (i32, i32, i32, i32, i32) {
 // }
 
 fn main() -> anyhow::Result<()> {
-    let words = loader::load_words("unigram_freq.csv", 65536)?;
-    println!("loaded word list");
+    // let words = loader::load_words("unigram_freq.csv", 65536)?;
+    // println!("loaded word list");
 
-    let h_codes = loader::load_codes("./huffman/huffman_codes.csv", u16::MAX.into())?;
-    let data_set = std::fs::read_to_string("./cantrbry/asyoulik.txt")?;
-    let split = split_words(data_set, &words);
-    println!("{:?}", count_cwords(&split));
+    let h_codes = loader::load_codes("./huffman/huffman.csv", u16::MAX.into())?;
+    let data_set = std::fs::read_to_string("./cantrbry/alice29.txt")?;
+    println!("{h_codes:?}");
+    // let split = split_words(data_set, &words);
+    // println!("{:?}", count_cwords(&split));
 
-    let mut file = std::fs::File::create("compress.tzp")?;
+    let mut file = std::fs::File::create("comp.tzp")?;
 
     let mut bits = BitVec::<u8>::new();
-    for word in split {
-        let mut w_bits = match word {
-            CWord::Word(word) => &h_codes[&word.word],
-            CWord::Newline => &h_codes["!"],
-            CWord::Punctuation(_) => &h_codes["!"],
-            CWord::Number(_) => &h_codes["!"],
-            CWord::Unknown(_) => &h_codes["!"],
-        }.clone();
-        bits.append(&mut w_bits);
+    for ch in data_set.chars() {
+        let mut code = h_codes.get(&format!("{}", ch as u8));
+        if let Some(v) = code {
+            let mut code = v.clone();
+            bits.append(&mut code);
+        }
     }
+    // for word in split {
+    //     let mut w_bits = match word {
+    //         CWord::Word(word) => &h_codes[&word.word],
+    //         CWord::Newline => &h_codes["!"],
+    //         CWord::Punctuation(_) => &h_codes["!"],
+    //         CWord::Number(_) => &h_codes["!"],
+    //         CWord::Unknown(_) => &h_codes["!"],
+    //     }.clone();
+    //     bits.append(&mut w_bits);
+    // }
     file.write_all(bits.as_raw_slice())?;
 
     // let decompressed = decompress("compress.tzp")?;
